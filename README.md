@@ -96,15 +96,23 @@ the frontend and backend and sets up Postgres using docker-compose.
 ## Quickstart without Docker
 
 **Prerequisites**
-The following instructions assume you have Python 3.11+ installed on your system. We strongly recommend using a virtual 
-environment to manage dependencies.
+The following instructions assume the following about your system:
 
-For example, if you are using `pyenv`, you can create a new virtual environment with:
+* You have [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) (for Windows users we do not recommend installing natively, this guide was written with Debian in mind)
+* You have Python 3.11 installed
+* You have Node.js installed
+* You have `nvm` and `npm` installed
+* You have `brew` (e.g., Homebrew or Linuxbrew) installed
+
+We strongly recommend using a virtual environment to manage dependencies. For example, if you are using `pyenv`, you can create a new virtual environment with:
+
 ```shell
 pyenv install 3.11
 pyenv virtualenv 3.11 opengpts
 pyenv activate opengpts
 ```
+
+> Note: You may need to use `venv` (or some other alternative) on Linux due to an issue install Python >=3.11 via `pyenv`
 
 Once your Python environment is set up, you can install the project dependencies:
 
@@ -115,15 +123,25 @@ host system.
 ```shell 
 pip install poetry
 pip install libmagic
-pip install langchain-community
+pip install langchain-community # TODO: Do we really need to install here in the conda? or just let poetry install?
 brew install libmagic
 ```
 
 **Install Postgres and the Postgres Vector Extension**
+
+On some Linux distributions for containers and WSL (i.e., Debian), `systemctl` may not exist, so try to install that first.
+
+```shell
+sudo apt install systemctl
 ```
+
+On MacOS and most full Linux distributions:
+
+```shell
 brew install postgresql pgvector
 brew services start postgresql
 ```
+# TODO: do more after this line and i dont know if postgresql actually started
 
 **Configure persistence layer**
 
