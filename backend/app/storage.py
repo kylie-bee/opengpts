@@ -112,13 +112,22 @@ async def get_thread_state(*, user_id: str, thread_id: str, assistant_id: str):
 
 async def update_thread_state(
     config: RunnableConfig,
-    values: Union[Sequence[AnyMessage], dict[str, Any]],
+    values: Union[
+        Sequence[AnyMessage], dict[str, Any]
+    ],  # TODO: update to for StateGraphs?
     *,
     user_id: str,
     assistant_id: str,
 ):
     """Add state to a thread."""
     assistant = await get_assistant(user_id, assistant_id)
+    as_node = None
+    # TODO: Somehow these checks don't get called but hten the aupdate_state doesn't
+    # fail due to an ambiguous node error ¯\(°_o)/¯
+    if isinstance(values, dict):
+        as_node = "__start__" if values.get("type", "") == "human" else None
+    if isinstance(values, AnyMessage):
+        as_node = "__start__" if values.type == "human" else None
     await agent.aupdate_state(
         {
             "configurable": {
@@ -128,6 +137,7 @@ async def update_thread_state(
             }
         },
         values,
+        as_node=as_node,
     )
 
 

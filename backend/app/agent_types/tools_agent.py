@@ -51,7 +51,7 @@ def get_tools_agent_executor(
     def should_continue(messages):
         last_message = messages[-1]
         # If there is no function call, then we finish
-        if not last_message.tool_calls:
+        if not getattr(last_message, "tool_calls", None):
             return "end"
         # Otherwise if there is, we continue
         else:
