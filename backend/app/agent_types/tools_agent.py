@@ -27,7 +27,10 @@ def get_tools_agent_executor(
     async def _get_messages(messages):
         msgs = []
         for m in messages:
-            if isinstance(m, LiberalToolMessage):
+            if isinstance(m, SystemMessage) and not m.content:
+                # Drop empty system messages
+                continue
+            elif isinstance(m, LiberalToolMessage):
                 _dict = m.dict()
                 _dict["content"] = str(_dict["content"])
                 m_c = ToolMessage(**_dict)

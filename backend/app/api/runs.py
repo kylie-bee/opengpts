@@ -4,7 +4,7 @@ import langsmith.client
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.exceptions import RequestValidationError
 from langchain.pydantic_v1 import ValidationError
-from langchain_core.messages import AnyMessage
+from langchain_core.messages import AnyMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langserve.schema import FeedbackCreateRequest
 from langsmith.utils import tracing_is_enabled
@@ -21,8 +21,13 @@ router = APIRouter()
 
 def default_input():
     """Return the default input for a run."""
-    # TODO: Should this have `role` and `content` keys instead?
-    return [{"role": "system", "content": ""}]
+    return [SystemMessage(content="")]
+
+
+async def cleanup_agent_thread(config: RunnableConfig) -> None:
+    """Remove empty system messages from a thread and update the thread state."""
+    # TODO: Use time travel example from https://github.com/langchain-ai/langgraph/blob/main/examples/time-travel.ipynb
+    # to remove empty system messages from the thread and update the thread state.
 
 
 class CreateRunPayload(BaseModel):
