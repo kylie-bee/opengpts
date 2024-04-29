@@ -19,12 +19,18 @@ from app.stream import astream_state, to_sse
 router = APIRouter()
 
 
+def default_input():
+    """Return the default input for a run."""
+    # TODO: Should this have `role` and `content` keys instead?
+    return [{"role": "system", "content": ""}]
+
+
 class CreateRunPayload(BaseModel):
     """Payload for creating a run."""
 
     thread_id: str
     input: Optional[Union[Sequence[AnyMessage], Dict[str, Any]]] = Field(
-        default_factory=dict
+        default_factory=default_input
     )
     config: Optional[RunnableConfig] = None
 

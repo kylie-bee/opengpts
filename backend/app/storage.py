@@ -122,12 +122,22 @@ async def update_thread_state(
     """Add state to a thread."""
     assistant = await get_assistant(user_id, assistant_id)
     as_node = None
-    # TODO: Somehow these checks don't get called but hten the aupdate_state doesn't
-    # fail due to an ambiguous node error ¯\(°_o)/¯
-    if isinstance(values, dict):
+    # TODO: Somehow these checks don't get called but then the aupdate_state doesn't
+    # fail due to an ambiguous node error ¯\(°_o)/¯ ... the agents themselves
+    # likely need to be able to handle the input better. All agents need to
+    # expect state-like inputs and convert them to messages? Or do we need some
+    # sort of intervening endpoint that checks if this is a state or a message?
+    # The problem we are going to have is arbitrary states that are more complex
+    # than just {input}. But, I suppose we should assume that any state must have one
+    # and only one input since the human message is the input unless we go pure API or
+    # we build a much more complex UI for the user to interact with the state graph.
+
+    # get last message
+    last_value = values[-1] if isinstance(values, Sequence) else values
+    if isinstance(last_value, dict):
         as_node = "__start__" if values.get("type", "") == "human" else None
-    if isinstance(values, AnyMessage):
-        as_node = "__start__" if values.type == "human" else None
+    if isinstance(last_value, AnyMessage):
+        as_node = "__start__" if last_value.type == "human" else None
     await agent.aupdate_state(
         {
             "configurable": {
