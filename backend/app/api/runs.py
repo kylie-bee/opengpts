@@ -4,7 +4,7 @@ import langsmith.client
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.exceptions import RequestValidationError
 from langchain.pydantic_v1 import ValidationError
-from langchain_core.messages import AnyMessage
+from langchain_core.messages import AnyMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langserve.schema import FeedbackCreateRequest
 from langsmith.utils import tracing_is_enabled
@@ -19,12 +19,17 @@ from app.stream import astream_state, to_sse
 router = APIRouter()
 
 
+def default_input():
+    """Return the default input for a run."""
+    return [SystemMessage(content="")]
+
+
 class CreateRunPayload(BaseModel):
     """Payload for creating a run."""
 
     thread_id: str
     input: Optional[Union[Sequence[AnyMessage], Dict[str, Any]]] = Field(
-        default_factory=dict
+        default_factory=default_input
     )
     config: Optional[RunnableConfig] = None
 
@@ -58,6 +63,20 @@ async def _run_input_and_config(payload: CreateRunPayload, user_id: str):
     return payload.input, config
 
 
+async def _cleanup_agent_thread(config: RunnableConfig) -> None:
+    """Remove empty system messages from a thread and update the thread state."""
+    # TODO: Use time travel example from https://github.com/langchain-ai/langgraph/blob/main/examples/time-travel.ipynb
+    # to remove empty system messages from the thread and update the thread state.
+    current_state = await agent.aget_state(config)
+    new_values = [
+        msg
+        for msg in current_state.values
+        if not (isinstance(msg, SystemMessage) and not msg.content)
+    ]
+    # Does produce a langsmith run but doesn't seem to save to postgres
+    await agent.aupdate_state(config, new_values)
+
+
 @router.post("")
 async def create_run(
     payload: CreateRunPayload,
@@ -67,6 +86,7 @@ async def create_run(
     """Create a run."""
     input_, config = await _run_input_and_config(payload, user["user_id"])
     background_tasks.add_task(agent.ainvoke, input_, config)
+    background_tasks.add_task(_cleanup_agent_thread, config)
     return {"status": "ok"}  # TODO add a run id
 
 

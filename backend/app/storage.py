@@ -112,13 +112,24 @@ async def get_thread_state(*, user_id: str, thread_id: str, assistant_id: str):
 
 async def update_thread_state(
     config: RunnableConfig,
-    values: Union[Sequence[AnyMessage], dict[str, Any]],
+    values: Union[
+        Sequence[AnyMessage], dict[str, Any]
+    ],  # TODO: update to for StateGraphs?
     *,
     user_id: str,
     assistant_id: str,
 ):
     """Add state to a thread."""
     assistant = await get_assistant(user_id, assistant_id)
+    as_node = None
+    # TODO: I am not confident this update will handle inputs for StateGraphs.
+
+    # get last message
+    last_value = values[-1] if isinstance(values, Sequence) else values
+    if isinstance(last_value, dict):
+        as_node = "__start__" if values.get("type", "") == "human" else None
+    if isinstance(last_value, AnyMessage):
+        as_node = "__start__" if last_value.type == "human" else None
     await agent.aupdate_state(
         {
             "configurable": {
@@ -128,6 +139,7 @@ async def update_thread_state(
             }
         },
         values,
+        as_node=as_node,
     )
 
 
